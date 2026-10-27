@@ -564,7 +564,8 @@ com o requisito não funcional ou com a evidência de validação correspondente
 - **Descrição:** Automatizar estados vazio/erro da busca e retry com APIs
   interceptadas.
 - **Critérios de aceite:**
-  - Busca vazia é distinta de falha de serviço.
+  - Busca vazia é distinta de falha de serviço, incluindo resposta `{}` sem
+    `results`, que exibe "Nenhuma cidade encontrada".
   - Retry da busca após erro repete a consulta correta e recupera a interface.
   - Testes controlam as rotas sem pausas fixas.
 - **Dependências:** T-24, T-31.
@@ -607,6 +608,8 @@ com o requisito não funcional ou com a evidência de validação correspondente
   - Em 320, 768 e 1920 px, não há overflow horizontal e controles permanecem
     visíveis e operáveis.
   - Em 320 px, testar nomes longos, cinco dias, loading e erro/retry.
+  - Em 375×812 px, o fluxo de busca e seleção renderiza a cidade, temperaturas
+    atuais e previsão de cinco dias sem overflow horizontal.
   - Perfis mobile incluem interação por toque; viewport reduzido sozinho não é
     tratado como evidência de dispositivo real (RNF-01–RNF-03).
 - **Dependências:** T-24, T-31.

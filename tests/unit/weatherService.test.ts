@@ -118,6 +118,18 @@ describe('getWeather', () => {
     ]);
   });
 
+  it.each([null, undefined])('mantém precipitação %j como indisponível, sem substituir por zero', async (precipitation) => {
+    const body = forecastResponse();
+    mockResponse({
+      ...body,
+      current: { ...body.current, precipitation },
+    });
+
+    const result = await getWeather(city);
+
+    expect(result.current.precipitationMm).toBeUndefined();
+  });
+
   it('preserva zero e datas mesmo quando faltam métricas opcionais', async () => {
     mockResponse({
       timezone: 'America/Sao_Paulo',

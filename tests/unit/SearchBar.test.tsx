@@ -12,17 +12,20 @@ describe('SearchBar', () => {
     expect(screen.getByRole('button', { name: 'Buscar' })).toBeEnabled();
   });
 
-  it('busca somente no envio e remove espaços das extremidades', async () => {
-    const user = userEvent.setup();
-    const onSearch = vi.fn();
-    render(<SearchBar onSearch={onSearch} />);
+  it.each(['São Paulo', '  São Paulo  '])(
+    'envia o termo %j somente ao buscar, sem espaços nas extremidades',
+    async (value) => {
+      const user = userEvent.setup();
+      const onSearch = vi.fn();
+      render(<SearchBar onSearch={onSearch} />);
 
-    await user.type(screen.getByRole('searchbox'), '  São Paulo  ');
-    expect(onSearch).not.toHaveBeenCalled();
+      await user.type(screen.getByRole('searchbox', { name: 'Cidade' }), value);
+      expect(onSearch).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole('button', { name: 'Buscar' }));
-    expect(onSearch).toHaveBeenCalledExactlyOnceWith('São Paulo');
-  });
+      await user.click(screen.getByRole('button', { name: 'Buscar' }));
+      expect(onSearch).toHaveBeenCalledExactlyOnceWith('São Paulo');
+    },
+  );
 
   it('permite envio por teclado com dois caracteres', async () => {
     const user = userEvent.setup();

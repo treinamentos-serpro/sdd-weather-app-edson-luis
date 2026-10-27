@@ -1,19 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import {
   celsiusToFahrenheit,
+  convertTemperature,
   fahrenheitToCelsius,
   formatTemperature,
+  unitLabel,
 } from '../../src/lib/temperature';
 
 describe('temperature', () => {
   it.each([
     [-40, -40],
     [0, 32],
+    [100, 212],
     [20, 68],
     [22.4, 72.32],
   ])('converte %s °C em %s °F sem arredondar', (celsius, fahrenheit) => {
     expect(celsiusToFahrenheit(celsius)).toBeCloseTo(fahrenheit);
     expect(fahrenheitToCelsius(fahrenheit)).toBeCloseTo(celsius);
+  });
+
+  it.each([
+    ['celsius', 20, 20],
+    ['fahrenheit', 20, 68],
+  ] as const)('converte %s para sua unidade de apresentação', (unit, celsius, expected) => {
+    expect(convertTemperature(celsius, unit)).toBe(expected);
+  });
+
+  it.each([
+    ['celsius', '°C'],
+    ['fahrenheit', '°F'],
+  ] as const)('retorna o símbolo correto para %s', (unit, label) => {
+    expect(unitLabel(unit)).toBe(label);
   });
 
   it('arredonda somente na apresentação e evita zero negativo', () => {

@@ -169,6 +169,57 @@ test('busca pode ser enviada por botão e vazio não é confundido com erro', as
   await expect(page.getByRole('link', { name: 'Open-Meteo' })).toBeVisible();
 });
 
+test('geocoding sem results mostra Nenhuma cidade encontrada sem erro', async ({ page }) => {
+  const { searchRequests, weatherRequests } = await installApiRoutes(page, {
+    search: () => ({ body: {} }),
+  });
+  await page.goto('/');
+  await page.getByRole('searchbox', { name: 'Cidade' }).fill('Ausente');
+  await page.getByRole('button', { name: 'Buscar' }).click();
+
+  await expect(page.getByRole('status')).toContainText('Nenhuma cidade encontrada');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Resultados da busca' })).toHaveCount(0);
+  expect(searchRequests).toHaveLength(1);
+  expect(weatherRequests).toHaveLength(0);
+});
+
+test('busca em viewport mobile 375x812 renderiza o clima corretamente', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const { weatherRequests } = await installApiRoutes(page);
+  await page.goto('/');
+  await searchSpringfield(page, 'button');
+  await page
+    .getByRole('region', { name: 'Resultados da busca' })
+    .getByRole('button', { name: 'Springfield São Paulo, Brasil', exact: true })
+    .click();
+
+  const currentWeather = page.getByRole('region', { name: 'Springfield', exact: true });
+  await expect(currentWeather.getByRole('heading', { name: 'Springfield' })).toBeVisible();
+  await expect(currentWeather.getByText('São Paulo, Brasil', { exact: true })).toBeVisible();
+  await expect(currentWeather.getByLabel('Temperatura atual')).toHaveText('20 °C');
+  await expect(currentWeather.getByText('Sensação térmica: 19 °C', { exact: true })).toBeVisible();
+  const forecast = page.getByRole('region', { name: 'Previsão de 5 dias', exact: true });
+  await expect(forecast).toBeVisible();
+  await expect(forecast.getByRole('article')).toHaveCount(5);
+  await expect(
+    forecast.getByRole('article').first().getByText('10 °C', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    forecast.getByRole('article').first().getByText('20 °C', { exact: true }),
+  ).toBeVisible();
+  expect(weatherRequests).toHaveLength(1);
+  expect(weatherRequests[0].searchParams.get('latitude')).toBe(String(cities[0].latitude));
+  expect(weatherRequests[0].searchParams.get('longitude')).toBe(String(cities[0].longitude));
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      ),
+    )
+    .toBe(true);
+});
+
 test('erro de busca pode ser repetido sem reenviar a consulta', async ({ page }) => {
   await installApiRoutes(page, {
     search: (_name, count) =>

@@ -68,8 +68,9 @@ Os componentes de estado podem ser extraídos somente se forem reutilizados; a e
 `CurrentWeather` recebe `city: City`, `current: CurrentWeather` e
 `unit: TemperatureUnit`. O hero usa cartões glass e grid responsivo para umidade,
 vento, precipitação atual e pressão ao nível do mar. `lib/temperature` expõe
-`celsiusToFahrenheit`, `fahrenheitToCelsius` (sem arredondamento) e
-`formatTemperature` (inteiro com símbolo ou “Indisponível”).
+`celsiusToFahrenheit`, `fahrenheitToCelsius` e `convertTemperature` (sem
+arredondamento), `unitLabel` e `formatTemperature` (inteiro com símbolo ou
+“Indisponível”).
 `lib/weatherCodes` expõe `getWeatherCondition`, com rótulo pt-BR e ícone Unicode
 decorativo para códigos WMO; código desconhecido produz “Condição indisponível”.
 Valores zero são preservados; métricas ausentes ou não finitas são explicitamente
