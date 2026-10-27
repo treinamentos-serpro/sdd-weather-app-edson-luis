@@ -119,13 +119,16 @@ O horário de referência e as datas representam o calendário local da cidade.
 
 O [App](src/App.tsx) compõe os componentes em uma tela responsiva, com unidade
 mantida apenas em memória e temperaturas convertidas na renderização.
-Execute `pnpm dev` para abrir a demonstração. A busca simula 600 ms de
-carregamento: qualquer nome válido mostra o mock de São Paulo; `vazio` mostra
-nenhum resultado e `erro` produz uma falha simulada. Os comandos ignoram
-maiúsculas/minúsculas e espaços nas extremidades. “Tentar novamente” repete
-a mesma simulação (portanto `erro` volta a falhar); outra busca válida permite
-voltar ao sucesso. Não há chamadas à API nem alteração da cidade do mock.
-O aviso de demonstração e o link para a Open-Meteo permanecem em todos os estados.
+Execute `pnpm dev` para consultar a Open-Meteo por meio de
+[useWeather](src/hooks/useWeather.ts). O hook apresenta os resultados da busca
+para seleção explícita; buscar outra cidade preserva o clima já selecionado,
+enquanto escolher uma cidade diferente remove imediatamente os dados antigos.
+A tela diferencia orientação inicial, carregamento, nenhum resultado, erro e
+sucesso. “Tentar novamente” repete a busca ou a consulta meteorológica
+correspondente; alternar a unidade não faz novas requisições. A atribuição
+Open-Meteo e o link da licença CC BY 4.0 permanecem visíveis em todos os
+estados.
+Os dados fictícios continuam disponíveis para desenvolvimento e testes.
 
 ### Componentes de previsão
 

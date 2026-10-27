@@ -272,6 +272,24 @@ Solicitar Celsius permite manter o modelo independente da unidade escolhida; `ti
 
 O estado da tela vive em um hook React (`useWeather`) usado pelo componente de composição. Não há necessidade de Redux, cache persistente ou armazenamento no navegador.
 
+### Contrato do hook
+
+O hook expõe estados independentes de busca e clima: `searchStatus`, `cities`,
+`searchError`, `query`, `weatherStatus`, `selectedCity`, `data` e
+`weatherError`, além de `search(name)`, `selectCity(city)`, `retrySearch()` e
+`retryWeather()`. `search` normaliza a consulta e disponibiliza no máximo dez
+cidades sem selecionar uma automaticamente; a pessoa escolhe explicitamente
+qual previsão consultar. Sem resultados, a busca publica `empty`; a consulta
+inválida permanece em `idle` e é apresentada junto ao formulário.
+
+Uma nova busca remove resultados anteriores daquela busca, mas preserva a
+cidade e o clima selecionados. Selecionar outra cidade limpa imediatamente
+os dados meteorológicos anteriores e mantém a nova cidade identificada durante
+loading e erro. Cada retry repete apenas sua operação, usando a consulta
+normalizada ou a cidade ainda selecionada, respectivamente. Sem operação
+anterior, não há requisição. Identificadores de operação independentes
+descartam respostas e erros obsoletos, inclusive após desmontagem.
+
 O hook mantém estados independentes para busca e clima, além da unidade:
 
 - Busca: texto submetido, status, resultados e erro. Uma consulta inválida mantém a busca em `idle`, apresenta validação junto ao formulário e não é classificada como erro de serviço. Uma nova busca altera somente esse estado e não apaga a cidade/clima selecionados.
@@ -293,6 +311,7 @@ Manter busca e clima separados garante que uma nova busca não apague os dados s
 ## Tratamento de erros
 
 - Cada requisição expira em dez segundos. Não há retry automático.
+- O helper `fetchWithTimeout` compartilha o `AbortController` entre geocodificação e previsão, mantendo o limite durante a leitura do JSON e executando `clearTimeout` no `finally`. `AbortError` gera `WeatherServiceError` de tipo `timeout` com "A requisição demorou demais."; falha de rede gera tipo `network` com "Falha de rede.".
 - Classificar falhas de transporte (`network`, por exemplo, conexão indisponível ou falha do `fetch`), falhas HTTP/API (`api`, resposta não-2xx, preservando o status HTTP quando disponível), timeout (`timeout`) e resposta inválida (`invalid-response`, JSON ilegível ou estrutura/dados essenciais inválidos). Não converter falha HTTP em resposta vazia.
 - Distinguir entrada inválida e busca sem resultados de falhas de serviço; somente uma geocodificação concluída sem resultados usa `empty`.
 - Aceitar resposta meteorológica parcial quando localização/fuso, temperatura atual e cinco datas consecutivas forem utilizáveis. Mostrar os dados presentes e indicar explicitamente cada campo/dia ausente como indisponível. Se faltar um requisito essencial, publicar `error` com `invalid-response`; não fabricar valores nem apresentar dados antigos.

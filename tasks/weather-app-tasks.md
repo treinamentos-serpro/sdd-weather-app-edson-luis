@@ -10,6 +10,19 @@ spec. As dependências indicam os pré-requisitos necessários; os identificador
 T-01–T-41 foram preservados para manter a rastreabilidade. Tarefas sem
 pré-requisito estão marcadas como “Nenhuma”.
 
+## Situação da execução
+
+- **Concluídas:** T-01–T-39. A validação automatizada, os projetos de browser e
+  os viewports efetivamente testados estão registrados em
+  [launch-validation.md](./launch-validation.md).
+- **Pendente — T-40:** medir desempenho após a versão atual ser publicada. A URL
+  pública existente ainda entrega um bundle anterior e não é evidência válida
+  para o código agora validado.
+- **Pendente — T-41:** registrar revisão manual de contraste/acessibilidade,
+  zoom real de 200% e matriz de dispositivos/versões antes do lançamento.
+  A licença e a atribuição foram revisadas e registradas; a aplicabilidade do
+  plano gratuito e a validação em aparelhos reais ainda precisam ser confirmadas.
+
 ## Fluxo de dados
 
 ```mermaid
@@ -165,7 +178,7 @@ com o requisito não funcional ou com a evidência de validação correspondente
     estrutura incompatível e HTTP não-2xx produzem erros tipados, nunca lista
     vazia (CA-01.1, CA-01.3–CA-01.5).
 - **Dependências:** T-01.
-- **Arquivos prováveis:** `src/services/geocoding.ts`
+- **Arquivo de implementação:** `src/services/weatherService.ts` (`searchCities`).
 - **Tipo:** Data
 
 ### T-10 — Implementar serviço de previsão meteorológica
@@ -184,7 +197,7 @@ com o requisito não funcional ou com a evidência de validação correspondente
     são classificadas conforme o contrato, sem retry automático nem valores
     inventados (CA-02.1–CA-02.8).
 - **Dependências:** T-01, T-03.
-- **Arquivos prováveis:** `src/services/weather.ts`
+- **Arquivo de implementação:** `src/services/weatherService.ts` (`getWeather`).
 - **Tipo:** Data
 
 

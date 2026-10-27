@@ -1,18 +1,31 @@
 import { useState } from 'react';
+import CityResults from './components/CityResults';
 import CurrentWeather from './components/CurrentWeather';
 import ForecastList from './components/ForecastList';
 import SearchBar from './components/SearchBar';
-import UnitToggle from './components/UnitToggle';
 import EmptyState from './components/states/EmptyState';
 import ErrorState from './components/states/ErrorState';
 import LoadingState from './components/states/LoadingState';
-import useMockWeather from './hooks/useMockWeather';
-import { mockWeatherData } from './mocks/weather';
+import UnitToggle from './components/UnitToggle';
+import useWeather from './hooks/useWeather';
 import type { TemperatureUnit } from './types/weather';
 
 export default function App() {
   const [unit, setUnit] = useState<TemperatureUnit>('celsius');
-  const { status, search, retry } = useMockWeather();
+  const {
+    searchStatus,
+    cities,
+    searchError,
+    query,
+    search,
+    retrySearch,
+    weatherStatus,
+    selectedCity,
+    data,
+    weatherError,
+    selectCity,
+    retryWeather,
+  } = useWeather();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-night-900 via-night-800 to-night-900 font-sans text-white">
@@ -34,80 +47,79 @@ export default function App() {
             <p className="mt-1 text-sm text-slate-300">O tempo para os seus próximos dias</p>
           </div>
           <div className="min-w-0 flex-1">
-            <SearchBar onSearch={search} disabled={status === 'loading'} />
+            <SearchBar onSearch={search} disabled={searchStatus === 'loading'} />
           </div>
           <UnitToggle unit={unit} onChange={setUnit} />
         </header>
-
-        <aside
-          aria-label="Modo de demonstração"
-          className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300"
-        >
-          <p>
-            Demonstração com dados fictícios de São Paulo, de 27 a 31 de outubro de 2026. Não são
-            condições em tempo real e nenhuma busca é enviada à API.
-          </p>
-          <p className="mt-2">
-            Busque qualquer cidade para ver o exemplo, ou digite <strong>vazio</strong> ou{' '}
-            <strong>erro</strong> para testar os estados. A nova tentativa repete a mesma simulação.
-          </p>
-        </aside>
 
         <main
           id="weather-content"
           tabIndex={-1}
           aria-label="Consulta meteorológica"
-          aria-busy={status === 'loading'}
+          aria-busy={searchStatus === 'loading' || weatherStatus === 'loading'}
           className="min-w-0 flex-1 space-y-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-400"
         >
           <p aria-live="polite" aria-atomic="true" className="sr-only">
-            {status === 'success'
-              ? `Dados de demonstração carregados para ${mockWeatherData.city.name}.`
-              : ''}
+            {searchStatus === 'success'
+              ? `${cities.length} cidades encontradas para ${query}.`
+              : weatherStatus === 'success' && data
+                ? `Dados meteorológicos carregados para ${data.city.name}.`
+                : ''}
           </p>
-          {status === 'idle' && (
+          {searchStatus === 'idle' && weatherStatus === 'idle' && (
             <EmptyState
               title="Como está o tempo?"
-              hint="Busque uma cidade para explorar o exemplo de clima atual e a previsão de cinco dias."
+              hint="Busque uma cidade para consultar o clima atual e a previsão de cinco dias."
             />
           )}
-          {(status === 'loading' || status === 'error') && (
-            <h2 className="break-words text-xl font-semibold">
-              {mockWeatherData.city.name} — {mockWeatherData.city.country} (demonstração)
-            </h2>
-          )}
-          {status === 'loading' && <LoadingState message="Carregando dados de demonstração..." />}
-          {status === 'empty' && (
+          {searchStatus === 'loading' && <LoadingState message="Buscando cidades..." />}
+          {searchStatus === 'empty' && (
             <EmptyState
               title="Nenhuma cidade encontrada"
-              hint="Tente buscar outro nome de cidade para ver os dados de demonstração."
+              hint="Tente buscar outro nome de cidade."
             />
           )}
-          {status === 'error' && (
-            <ErrorState
-              message="Não foi possível carregar o clima. Esta é uma falha simulada."
-              onRetry={retry}
-            />
+          {searchStatus === 'error' && searchError && (
+            <ErrorState message={searchError.message} onRetry={retrySearch} />
           )}
-          {status === 'success' && (
-            <>
-              <CurrentWeather
-                city={mockWeatherData.city}
-                current={mockWeatherData.current}
-                unit={unit}
+          {searchStatus === 'success' && (
+            <CityResults cities={cities} selectedCity={selectedCity} onSelect={selectCity} />
+          )}
+          {weatherStatus === 'loading' && selectedCity && (
+            <div aria-live="polite">
+              <LoadingState
+                message={`Carregando dados meteorológicos de ${selectedCity.name}...`}
               />
-              <ForecastList days={mockWeatherData.days} unit={unit} />
+            </div>
+          )}
+          {weatherStatus === 'error' && selectedCity && weatherError && (
+            <div>
+              <p className="mb-2 text-sm text-slate-300">Cidade selecionada: {selectedCity.name}</p>
+              <ErrorState message={weatherError.message} onRetry={retryWeather} />
+            </div>
+          )}
+          {weatherStatus === 'success' && data && (
+            <>
+              <CurrentWeather city={data.city} current={data.current} unit={unit} />
+              <ForecastList days={data.days} unit={unit} />
             </>
           )}
         </main>
 
         <footer className="border-t border-white/10 pt-5 text-sm text-slate-300">
-          Weather App · Dados fictícios para demonstração. Fonte prevista na versão integrada:{' '}
+          Dados meteorológicos por{' '}
           <a
             href="https://open-meteo.com/"
             className="rounded text-accent-400 underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
           >
             Open-Meteo
+          </a>
+          {' · Dados adaptados para exibição · Licença '}
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            className="rounded text-accent-400 underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
+          >
+            CC BY 4.0
           </a>
           .
         </footer>
