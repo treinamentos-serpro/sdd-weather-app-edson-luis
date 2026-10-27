@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getWeather, searchCities } from '../services/weatherService';
+import { getWeather, searchCities, WeatherServiceError } from '../services/weatherService';
 import type { City, RequestStatus, ServiceError, WeatherData } from '../types/weather';
 
 type RequestError = Error & Partial<Pick<ServiceError, 'kind' | 'statusCode'>>;
@@ -71,9 +71,9 @@ export default function useWeather() {
     } catch (cause) {
       if (id !== searchOperationId.current) return;
       const error =
-        cause instanceof Error
+        cause instanceof WeatherServiceError
           ? cause
-          : new Error('Não foi possível pesquisar cidades.', { cause });
+          : new Error('Não foi possível pesquisar cidades. Tente novamente.', { cause });
       setSearchState({ status: 'error', cities: [], error, query });
     }
   }, []);
@@ -89,9 +89,9 @@ export default function useWeather() {
     } catch (cause) {
       if (id !== weatherOperationId.current) return;
       const error =
-        cause instanceof Error
+        cause instanceof WeatherServiceError
           ? cause
-          : new Error('Não foi possível consultar o clima.', { cause });
+          : new Error('Não foi possível consultar o clima. Tente novamente.', { cause });
       setWeatherState({ status: 'error', selectedCity: city, data: null, error });
     }
   }, []);

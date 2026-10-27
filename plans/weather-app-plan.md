@@ -82,6 +82,16 @@ tem `role="search"`, label acessível e envio por botão ou Enter. Consultas sã
 normalizadas com `trim`; menos de dois caracteres exibem validação acessível,
 sem chamar `onSearch`. `disabled` bloqueia o campo e o envio.
 
+Durante loading, preservar `readOnly` no campo e `aria-disabled` no botão para
+não perder o foco, informar `aria-busy` no formulário e aplicar hover somente
+quando habilitado. `CityResults` usa ref e efeito dependente de `cities` para
+focar seu título após uma busca concluída, somente se o foco ainda estiver no
+formulário ou no corpo da página. O título usa `tabIndex={-1}` e foco visível.
+`ForecastList` usa `React.memo` com comparação padrão: buscas e erros não
+recalculam os cinco cartões quando `days` e `unit` permanecem iguais; mudanças
+de dados ou unidade continuam renderizando normalmente. Não memoizar cálculos
+triviais nem introduzir comparadores personalizados.
+
 ## Modelo de dados
 
 Os serviços convertem os formatos externos para contratos internos. Os valores de temperatura são armazenados em Celsius e convertidos somente para apresentação.
@@ -312,7 +322,8 @@ Manter busca e clima separados garante que uma nova busca não apague os dados s
 ## Tratamento de erros
 
 - Cada requisição expira em dez segundos. Não há retry automático.
-- O helper `fetchWithTimeout` compartilha o `AbortController` entre geocodificação e previsão, mantendo o limite durante a leitura do JSON e executando `clearTimeout` no `finally`. `AbortError` gera `WeatherServiceError` de tipo `timeout` com "A requisição demorou demais."; falha de rede gera tipo `network` com "Falha de rede.".
+- O helper `fetchWithTimeout` é reutilizado por geocodificação e previsão, com um `AbortController` por requisição, mantendo o limite durante a leitura do JSON e executando `clearTimeout` no `finally`. `AbortError` gera `WeatherServiceError` de tipo `timeout` com "A consulta demorou mais de 10 segundos. Tente novamente."; falha de rede, inclusive durante a leitura do corpo, gera tipo `network` com "Não foi possível conectar ao serviço. Verifique sua conexão e tente novamente.". JSON malformado gera `invalid-response`.
+- O hook preserva os erros tipados do serviço. Falhas inesperadas recebem mensagem amigável específica da operação, com sugestão de nova tentativa e a causa original preservada sem expor detalhes técnicos na interface.
 - Classificar falhas de transporte (`network`, por exemplo, conexão indisponível ou falha do `fetch`), falhas HTTP/API (`api`, resposta não-2xx, preservando o status HTTP quando disponível), timeout (`timeout`) e resposta inválida (`invalid-response`, JSON ilegível ou estrutura/dados essenciais inválidos). Não converter falha HTTP em resposta vazia.
 - Distinguir entrada inválida e busca sem resultados de falhas de serviço; somente uma geocodificação concluída sem resultados usa `empty`.
 - Aceitar resposta meteorológica parcial quando localização/fuso, temperatura atual e cinco datas consecutivas forem utilizáveis. Mostrar os dados presentes e indicar explicitamente cada campo/dia ausente como indisponível. Se faltar um requisito essencial, publicar `error` com `invalid-response`; não fabricar valores nem apresentar dados antigos.

@@ -29,6 +29,7 @@ export default function SearchBar({ onSearch, disabled = false }: SearchBarProps
     <form
       role="search"
       aria-label="Buscar cidade"
+      aria-busy={disabled}
       onSubmit={handleSubmit}
       className="rounded-2xl border border-white/10 bg-white/5 p-4 font-sans text-white shadow-glass backdrop-blur-md"
     >
@@ -55,7 +56,7 @@ export default function SearchBar({ onSearch, disabled = false }: SearchBarProps
         <button
           type="submit"
           aria-disabled={disabled}
-          className="rounded-xl bg-accent-500 px-5 py-3 font-semibold text-night-900 hover:bg-accent-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+          className="rounded-xl bg-accent-500 px-5 py-3 font-semibold text-night-900 aria-[disabled=false]:hover:bg-accent-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
         >
           Buscar
         </button>

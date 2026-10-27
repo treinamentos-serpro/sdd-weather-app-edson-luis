@@ -242,6 +242,8 @@ com o requisito não funcional ou com a evidência de validação correspondente
     validação acessível sem gerar requisição (CA-01.1).
   - Campo e botão têm rótulos semânticos, operam por teclado e mantêm indicação
     visível de foco (RNF-02).
+  - Loading informa `aria-busy` no formulário, preserva o foco e bloqueia envio;
+    o hover do botão só se aplica quando habilitado.
 - **Dependências:** T-01.
 - **Arquivos prováveis:** `src/components/SearchBar.tsx`
 - **Tipo:** UI
@@ -255,6 +257,9 @@ com o requisito não funcional ou com a evidência de validação correspondente
     contexto disponível (país/região).
   - Resultado vazio é distinto de erro; seleção por teclado e estado selecionado
     são compreensíveis por tecnologia assistiva (CA-01.3–CA-01.6, RNF-02).
+  - Após busca com cidades, focar o título dos resultados somente se o foco
+    permanecer no formulário ou no corpo da página. Testar nova busca e troca
+    de unidade sem roubar o foco de outro controle.
 - **Dependências:** T-01.
 - **Arquivos prováveis:** `src/components/CityResults.tsx`
 - **Tipo:** UI
@@ -286,6 +291,8 @@ com o requisito não funcional ou com a evidência de validação correspondente
     locais retornadas pela API, sem deslocamento pelo fuso do dispositivo.
   - Métricas ausentes em um dia são identificadas como indisponíveis sem ocultar
     a data ou substituir valores por zero (CA-02.2–CA-02.3).
+  - Memoizar a lista com comparação padrão de props para evitar renderizações
+    em buscas sem mudança de previsão; manter atualizações de dados e unidade.
 - **Dependências:** T-03, T-04, T-13.
 - **Arquivos prováveis:** `src/components/ForecastList.tsx`
 - **Tipo:** UI

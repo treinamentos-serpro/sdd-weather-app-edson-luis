@@ -11,8 +11,8 @@ interface CurrentWeatherProps {
 
 const numberFormatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 
-function formatMetric(value: number | undefined, unit: string): string {
-  return value === undefined || !Number.isFinite(value)
+function formatMetric(value: number | null | undefined, unit: string): string {
+  return value === null || value === undefined || !Number.isFinite(value)
     ? 'Indisponível'
     : `${numberFormatter.format(value)} ${unit}`;
 }

@@ -118,7 +118,10 @@ describe('getWeather', () => {
     ]);
   });
 
-  it.each([null, undefined])('mantém precipitação %j como indisponível, sem substituir por zero', async (precipitation) => {
+  it.each([
+    null,
+    undefined,
+  ])('mantém precipitação %j como indisponível, sem substituir por zero', async (precipitation) => {
     const body = forecastResponse();
     mockResponse({
       ...body,
@@ -128,6 +131,45 @@ describe('getWeather', () => {
     const result = await getWeather(city);
 
     expect(result.current.precipitationMm).toBeUndefined();
+  });
+
+  it('normaliza todos os campos opcionais ausentes ou nulos sem alterar datas', async () => {
+    const body = forecastResponse();
+    mockResponse({
+      timezone: body.timezone,
+      current: {
+        temperature_2m: body.current.temperature_2m,
+        time: null,
+        apparent_temperature: null,
+        relative_humidity_2m: undefined,
+        weather_code: null,
+        wind_speed_10m: undefined,
+        precipitation: null,
+        pressure_msl: undefined,
+      },
+      daily: {
+        time: body.daily.time,
+        temperature_2m_min: [null, undefined, null, undefined, null],
+        temperature_2m_max: undefined,
+        weather_code: null,
+        precipitation_probability_max: [undefined, null, undefined, null, undefined],
+        wind_speed_10m_max: undefined,
+      },
+    });
+
+    const result = await getWeather(city);
+
+    expect(result.current).toEqual({ temperatureC: body.current.temperature_2m });
+    expect(result.days).toEqual(
+      body.daily.time.map((date) => ({
+        date,
+        minimumC: undefined,
+        maximumC: undefined,
+        weatherCode: undefined,
+        precipitationProbabilityMax: undefined,
+        windSpeedMaxKmh: undefined,
+      })),
+    );
   });
 
   it('preserva zero e datas mesmo quando faltam métricas opcionais', async () => {
@@ -305,8 +347,16 @@ describe('searchCities', () => {
     ['previsão', () => getWeather(city), forecastResponse()],
   ] as const)('timeout e transporte: %s', (_name, request, body) => {
     it.each([
-      [new DOMException('Aborted', 'AbortError'), 'timeout', 'A requisição demorou demais.'],
-      [new TypeError('Failed to fetch'), 'network', 'Falha de rede.'],
+      [
+        new DOMException('Aborted', 'AbortError'),
+        'timeout',
+        'A consulta demorou mais de 10 segundos. Tente novamente.',
+      ],
+      [
+        new TypeError('Failed to fetch'),
+        'network',
+        'Não foi possível conectar ao serviço. Verifique sua conexão e tente novamente.',
+      ],
     ])('converte %s em WeatherServiceError e limpa o timer', async (cause, kind, message) => {
       vi.useFakeTimers();
       const fetchMock = vi.fn().mockRejectedValue(cause);
@@ -336,7 +386,7 @@ describe('searchCities', () => {
       const assertion = expect(result).rejects.toMatchObject({
         name: 'WeatherServiceError',
         kind: 'timeout',
-        message: 'A requisição demorou demais.',
+        message: 'A consulta demorou mais de 10 segundos. Tente novamente.',
       });
 
       await vi.advanceTimersByTimeAsync(9_999);
@@ -346,6 +396,24 @@ describe('searchCities', () => {
 
       await assertion;
       expect(fetchMock.mock.calls[0][1].signal?.aborted).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('classifica desconexão durante a leitura do corpo como falha de rede', async () => {
+      vi.useFakeTimers();
+      const cause = new TypeError('Failed to fetch');
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockRejectedValue(cause),
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      await expect(request()).rejects.toMatchObject({
+        kind: 'network',
+        message: 'Não foi possível conectar ao serviço. Verifique sua conexão e tente novamente.',
+        cause,
+      });
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(vi.getTimerCount()).toBe(0);
     });

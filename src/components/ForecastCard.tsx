@@ -22,6 +22,7 @@ export default function ForecastCard({ day, unit }: ForecastCardProps) {
     {
       label: 'Probabilidade de chuva',
       value:
+        probability !== null &&
         probability !== undefined &&
         Number.isFinite(probability) &&
         probability >= 0 &&
@@ -32,7 +33,7 @@ export default function ForecastCard({ day, unit }: ForecastCardProps) {
     {
       label: 'Vento máximo',
       value:
-        wind !== undefined && Number.isFinite(wind) && wind >= 0
+        wind !== null && wind !== undefined && Number.isFinite(wind) && wind >= 0
           ? `${numberFormatter.format(wind)} km/h`
           : 'Indisponível',
     },

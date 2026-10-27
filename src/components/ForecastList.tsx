@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { memo, useId } from 'react';
 import type { ForecastDay, TemperatureUnit } from '../types/weather';
 import ForecastCard from './ForecastCard';
 
@@ -7,7 +7,7 @@ interface ForecastListProps {
   unit: TemperatureUnit;
 }
 
-export default function ForecastList({ days, unit }: ForecastListProps) {
+function ForecastList({ days, unit }: ForecastListProps) {
   const headingId = useId();
 
   return (
@@ -31,3 +31,5 @@ export default function ForecastList({ days, unit }: ForecastListProps) {
     </section>
   );
 }
+
+export default memo(ForecastList);

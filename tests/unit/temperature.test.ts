@@ -41,6 +41,7 @@ describe('temperature', () => {
   });
 
   it.each([
+    null,
     undefined,
     Number.NaN,
     Infinity,

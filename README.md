@@ -130,6 +130,21 @@ Open-Meteo e o link da licença CC BY 4.0 permanecem visíveis em todos os
 estados.
 Os dados fictícios continuam disponíveis para desenvolvimento e testes.
 
+Cada requisição tem timeout de 10 segundos, incluindo a leitura da resposta.
+Falhas de conexão orientam a verificar a rede; timeout informa o limite atingido.
+Não há retry automático: o botão “Tentar novamente” reutiliza a última consulta
+normalizada ou a cidade selecionada, mesmo que o texto do formulário tenha mudado
+sem ser enviado.
+
+Para validar falhas offline, os testes de
+[weatherService](tests/unit/weatherService.test.ts) simulam rejeição do `fetch` e
+desconexão durante a leitura do corpo. Os
+[E2E de casos extremos](tests/e2e/weather-edge-cases.spec.ts) abortam requisições com
+`internetdisconnected` e verificam a recuperação por retry sem redigitação.
+Uma verificação manual complementar é carregar a aplicação, ativar **Offline** no
+DevTools, buscar uma cidade ou selecionar um resultado já carregado, conferir a
+mensagem, restaurar a rede e clicar em “Tentar novamente”.
+
 ### Componentes de previsão
 
 Use `ForecastList` de [src/components/ForecastList.tsx](src/components/ForecastList.tsx)

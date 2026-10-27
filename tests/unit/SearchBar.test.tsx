@@ -8,6 +8,7 @@ describe('SearchBar', () => {
     render(<SearchBar onSearch={vi.fn()} />);
 
     expect(screen.getByRole('search', { name: 'Buscar cidade' })).toBeInTheDocument();
+    expect(screen.getByRole('search')).toHaveAttribute('aria-busy', 'false');
     expect(screen.getByRole('searchbox', { name: 'Cidade' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Buscar' })).toBeEnabled();
   });
@@ -26,6 +27,18 @@ describe('SearchBar', () => {
       expect(onSearch).toHaveBeenCalledExactlyOnceWith('São Paulo');
     },
   );
+
+  it('preserva caracteres especiais na consulta após remover espaços externos', async () => {
+    const user = userEvent.setup();
+    const onSearch = vi.fn();
+    const query = 'São Paulo &count=100/?#';
+    render(<SearchBar onSearch={onSearch} />);
+
+    await user.type(screen.getByRole('searchbox', { name: 'Cidade' }), `  ${query}  `);
+    await user.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    expect(onSearch).toHaveBeenCalledExactlyOnceWith(query);
+  });
 
   it('permite envio por teclado com dois caracteres', async () => {
     const user = userEvent.setup();
@@ -81,6 +94,7 @@ describe('SearchBar', () => {
     rerender(<SearchBar onSearch={onSearch} disabled />);
 
     expect(input).toHaveFocus();
+    expect(screen.getByRole('search')).toHaveAttribute('aria-busy', 'true');
     expect(input).toHaveAttribute('readonly');
     expect(screen.getByRole('button', { name: 'Buscar' })).toHaveAttribute('aria-disabled', 'true');
     await user.click(screen.getByRole('button', { name: 'Buscar' }));
@@ -88,6 +102,7 @@ describe('SearchBar', () => {
     expect(onSearch).not.toHaveBeenCalled();
 
     rerender(<SearchBar onSearch={onSearch} disabled={false} />);
+    expect(screen.getByRole('search')).toHaveAttribute('aria-busy', 'false');
     expect(input).not.toHaveAttribute('readonly');
     await user.click(screen.getByRole('button', { name: 'Buscar' }));
     expect(onSearch).toHaveBeenCalledExactlyOnceWith('Recife');

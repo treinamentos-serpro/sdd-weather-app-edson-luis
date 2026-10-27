@@ -16,8 +16,13 @@ export function unitLabel(unit: TemperatureUnit): string {
   return unit === 'fahrenheit' ? '°F' : '°C';
 }
 
-export function formatTemperature(celsius: number | undefined, unit: TemperatureUnit): string {
-  if (celsius === undefined || !Number.isFinite(celsius)) return 'Indisponível';
+export function formatTemperature(
+  celsius: number | null | undefined,
+  unit: TemperatureUnit,
+): string {
+  if (celsius === null || celsius === undefined || !Number.isFinite(celsius)) {
+    return 'Indisponível';
+  }
 
   const temperature = convertTemperature(celsius, unit);
   const rounded = Math.round(temperature);

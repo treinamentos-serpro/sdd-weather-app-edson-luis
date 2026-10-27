@@ -32,13 +32,30 @@ async function fetchWithTimeout<T>(
   } catch (cause) {
     if (cause instanceof WeatherServiceError) throw cause;
     if (controller.signal.aborted || isAbortError(cause)) {
-      throw new WeatherServiceError('timeout', 'A requisição demorou demais.', undefined, {
-        cause,
-      });
+      throw new WeatherServiceError(
+        'timeout',
+        'A consulta demorou mais de 10 segundos. Tente novamente.',
+        undefined,
+        { cause },
+      );
     }
-    throw new WeatherServiceError('network', 'Falha de rede.', undefined, { cause });
+    throw new WeatherServiceError(
+      'network',
+      'Não foi possível conectar ao serviço. Verifique sua conexão e tente novamente.',
+      undefined,
+      { cause },
+    );
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+async function readJson(response: Response, message: string): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch (cause) {
+    if (!(cause instanceof SyntaxError)) throw cause;
+    throw new WeatherServiceError('invalid-response', message, undefined, { cause });
   }
 }
 
@@ -73,17 +90,7 @@ export async function searchCities(name: string): Promise<City[]> {
         );
       }
 
-      try {
-        return await response.json();
-      } catch (cause) {
-        if (isAbortError(cause)) throw cause;
-        throw new WeatherServiceError(
-          'invalid-response',
-          'Resposta inválida ao pesquisar cidades.',
-          undefined,
-          { cause },
-        );
-      }
+      return readJson(response, 'Resposta inválida ao pesquisar cidades.');
     },
   );
 
@@ -108,6 +115,7 @@ export async function searchCities(name: string): Promise<City[]> {
 }
 
 function optionalNumber(value: unknown): number | undefined {
+  if (value === null || value === undefined) return undefined;
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
@@ -233,19 +241,7 @@ export async function getWeather(city: City): Promise<WeatherData> {
         );
       }
 
-      try {
-        return await response.json();
-      } catch (cause) {
-        if (isAbortError(cause)) throw cause;
-        throw new WeatherServiceError(
-          'invalid-response',
-          'Resposta meteorológica inválida.',
-          undefined,
-          {
-            cause,
-          },
-        );
-      }
+      return readJson(response, 'Resposta meteorológica inválida.');
     },
   );
   return normalizeWeather(data, city);

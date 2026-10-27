@@ -110,6 +110,75 @@ describe('useWeather', () => {
     expect(getWeather).not.toHaveBeenCalled();
   });
 
+  it.each([new TypeError('Failed to fetch'), 'erro interno'])(
+    'apresenta mensagens amigáveis e preserva a causa inesperada: %s',
+    async (cause) => {
+      vi.mocked(searchCities).mockRejectedValueOnce(cause);
+      vi.mocked(getWeather).mockRejectedValueOnce(cause);
+      const { result } = renderHook(() => useWeather());
+
+      await act(async () => {
+        await result.current.search(city.name);
+        await result.current.selectCity(city);
+      });
+
+      expect(result.current.searchError).toMatchObject({
+        message: 'Não foi possível pesquisar cidades. Tente novamente.',
+        cause,
+      });
+      expect(result.current.weatherError).toMatchObject({
+        message: 'Não foi possível consultar o clima. Tente novamente.',
+        cause,
+      });
+      expect(result.current.searchStatus).toBe('error');
+      expect(result.current.weatherStatus).toBe('error');
+      expect(result.current.selectedCity).toBe(city);
+      expect(result.current.data).toBeNull();
+    },
+  );
+
+  it.each(['network', 'timeout'] as const)(
+    'preserva o erro %s e repete somente a última operação de cada tipo',
+    async (kind) => {
+      const error = new WeatherServiceError(kind, 'Verifique sua conexão e tente novamente.');
+      const { result } = renderHook(() => useWeather());
+      await act(async () => {
+        await result.current.search(city.name);
+        await result.current.selectCity(city);
+      });
+      vi.mocked(searchCities).mockRejectedValueOnce(error);
+      vi.mocked(getWeather).mockRejectedValueOnce(error);
+
+      await act(async () => {
+        await result.current.search(`  ${otherCity.name}  `);
+        await result.current.selectCity(otherCity);
+      });
+      expect(result.current.searchError).toBe(error);
+      expect(result.current.weatherError).toBe(error);
+      expect(result.current.data).toBeNull();
+      expect(searchCities).toHaveBeenCalledTimes(2);
+      expect(getWeather).toHaveBeenCalledTimes(2);
+
+      await act(async () => {
+        await result.current.retrySearch();
+      });
+      expect(searchCities).toHaveBeenLastCalledWith(otherCity.name);
+      expect(getWeather).toHaveBeenCalledTimes(2);
+      expect(result.current.searchError).toBeNull();
+      expect(result.current.weatherError).toBe(error);
+
+      vi.mocked(getWeather).mockResolvedValueOnce(otherWeather);
+      await act(async () => {
+        await result.current.retryWeather();
+      });
+      expect(getWeather).toHaveBeenLastCalledWith(otherCity);
+      expect(searchCities).toHaveBeenCalledTimes(3);
+      expect(getWeather).toHaveBeenCalledTimes(3);
+      expect(result.current.weatherError).toBeNull();
+      expect(result.current.data).toBe(otherWeather);
+    },
+  );
+
   it('seleção limpa dados anteriores de imediato e mantém a cidade durante loading', async () => {
     const forecast = deferred<WeatherData>();
     const { result } = renderHook(() => useWeather());

@@ -118,6 +118,11 @@ test('jornada de busca, seleção de homônimo, previsão e unidade', async ({ p
   const isMobile = testInfo.project.name.startsWith('mobile-');
   if (isMobile) await page.setViewportSize({ width: 320, height: 900 });
   await searchSpringfield(page);
+  if (!isMobile) {
+    await expect(page.getByRole('heading', { name: 'Selecione uma cidade' })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: /Springfield São Paulo/ })).toBeFocused();
+  }
 
   const cityButtons = page.getByRole('region', { name: 'Resultados da busca' }).getByRole('button');
   await expect(cityButtons).toHaveCount(2);
@@ -140,6 +145,7 @@ test('jornada de busca, seleção de homônimo, previsão e unidade', async ({ p
   const fahrenheit = page.getByRole('button', { name: 'Fahrenheit' });
   if (isMobile) await fahrenheit.tap();
   else await fahrenheit.click();
+  if (!isMobile) await expect(fahrenheit).toBeFocused();
   await expect(page.getByLabel('Temperatura atual')).toHaveText('68 °F');
   await expect(
     page
@@ -437,7 +443,7 @@ test('timeout meteorológico termina em erro sem repetição automática', async
     .first()
     .click();
   await page.clock.fastForward(10_000);
-  await expect(page.getByRole('alert')).toContainText('A requisição demorou demais.');
+  await expect(page.getByRole('alert')).toContainText('A consulta demorou mais de 10 segundos.');
   await expect(page.getByLabel('Temperatura atual')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
 });
