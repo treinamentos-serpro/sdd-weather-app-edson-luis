@@ -26,7 +26,7 @@ O produto é uma aplicação web responsiva, em português do Brasil, para pesqu
 - Qualidade do ar, índice UV, pólen, alertas meteorológicos ou avisos de eventos severos.
 - Dados meteorológicos históricos, tendências climáticas ou previsões para além dos cinco dias definidos.
 - Comparação simultânea de cidades, painel com múltiplas localizações ou compartilhamento e exportação de consultas.
-- Alternância de unidades para vento ou precipitação; a velocidade do vento permanece em km/h e a precipitação é representada somente pela probabilidade em porcentagem.
+- Alternância de unidades para vento, precipitação ou pressão; vento permanece em km/h, precipitação atual em mm e pressão ao nível do mar em hPa. A previsão diária usa probabilidade de precipitação em porcentagem.
 
 ## Regras de produto
 
@@ -45,7 +45,7 @@ O produto é uma aplicação web responsiva, em português do Brasil, para pesqu
 ## Requisitos funcionais
 
 - **RF-01 — Buscar cidades:** aceitar uma consulta válida e exibir até dez resultados selecionáveis, com contexto geográfico disponível.
-- **RF-02 — Consultar condições atuais:** após selecionar uma cidade, exibir temperatura e sensação térmica, condição meteorológica, umidade relativa (%) e velocidade do vento (km/h) quando fornecidas pela fonte.
+- **RF-02 — Consultar condições atuais:** após selecionar uma cidade, exibir temperatura e sensação térmica, condição meteorológica com ícone, umidade relativa (%), velocidade do vento (km/h), precipitação atual (mm) e pressão ao nível do mar (hPa) quando fornecidas pela fonte. O hero destaca a temperatura na unidade selecionada.
 - **RF-03 — Consultar previsão diária:** exibir cinco datas locais consecutivas; para cada dia, exibir temperatura mínima e máxima, condição, probabilidade máxima de precipitação (%) e velocidade máxima do vento (km/h) quando fornecidas.
 - **RF-04 — Alternar temperatura:** disponibilizar Celsius e Fahrenheit, iniciando em Celsius.
 - **RF-05 — Tratar estados e falhas:** distinguir carregamento, resultados vazios, falha de serviço, timeout e dados parciais; oferecer nova tentativa em falhas recuperáveis.

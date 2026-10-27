@@ -37,7 +37,7 @@ Estrutura proposta, alinhada às convenções do repositório:
 ```text
 src/
 ├── components/
-│   ├── SearchForm.tsx
+│   ├── SearchBar.tsx
 │   ├── CityResults.tsx
 │   ├── CurrentWeather.tsx
 │   ├── ForecastList.tsx
@@ -53,7 +53,7 @@ src/
 │   └── weather.ts              # modelos e contratos compartilhados
 ├── lib/
 │   ├── temperature.ts          # conversão de temperatura
-│   ├── weather-codes.ts        # códigos WMO para rótulos pt-BR
+│   ├── weatherCodes.ts         # códigos WMO para rótulos pt-BR e ícones
 │   └── formatting.ts           # datas, horários e números
 ├── App.tsx
 └── main.tsx
@@ -64,6 +64,22 @@ tests/
 ```
 
 Os componentes de estado podem ser extraídos somente se forem reutilizados; a estrutura não exige abstrações ou arquivos vazios. Os caminhos finais dos testes devem respeitar a configuração existente.
+
+`CurrentWeather` recebe `city: City`, `current: CurrentWeather` e
+`unit: TemperatureUnit`. O hero usa cartões glass e grid responsivo para umidade,
+vento, precipitação atual e pressão ao nível do mar. `lib/temperature` expõe
+`celsiusToFahrenheit`, `fahrenheitToCelsius` (sem arredondamento) e
+`formatTemperature` (inteiro com símbolo ou “Indisponível”).
+`lib/weatherCodes` expõe `getWeatherCondition`, com rótulo pt-BR e ícone Unicode
+decorativo para códigos WMO; código desconhecido produz “Condição indisponível”.
+Valores zero são preservados; métricas ausentes ou não finitas são explicitamente
+indisponíveis. O horário de referência local retornado pela API é apresentado
+sem conversão para o fuso do dispositivo.
+
+`SearchBar` recebe `onSearch(city: string)` e `disabled` opcional. O formulário
+tem `role="search"`, label acessível e envio por botão ou Enter. Consultas são
+normalizadas com `trim`; menos de dois caracteres exibem validação acessível,
+sem chamar `onSearch`. `disabled` bloqueia o campo e o envio.
 
 ## Modelo de dados
 
@@ -87,6 +103,8 @@ interface CurrentWeather {
   relativeHumidity?: number;
   weatherCode?: number;
   windSpeedKmh?: number;
+  precipitationMm?: number;
+  pressureHpa?: number;
   referenceTime?: string;
 }
 
@@ -118,6 +136,35 @@ interface ServiceError {
 Uma resposta meteorológica só é utilizável se tiver localização/fuso, temperatura atual utilizável e cinco datas locais distintas e consecutivas. `forecast_days=5` com `timezone=auto` faz a API retornar hoje local e os quatro dias seguintes; quando `current.time` estiver presente, conferir se sua data local coincide com a primeira data prevista. A ausência do horário de referência não invalida a previsão. Campos meteorológicos opcionais ausentes são apresentados como indisponíveis, nunca como zero ou valor anterior; uma data sem métricas permanece identificada. Esses casos são sucesso com dados parciais, não erro. Se faltar um requisito estrutural ou dado essencial, a resposta é inválida e não é apresentada como sucesso. Um código WMO desconhecido também resulta em condição indisponível. Esses contratos atendem CA-02.1 a CA-02.8 e CA-05.4 a CA-05.5.
 
 ## Fluxo de dados
+
+```mermaid
+flowchart TD
+    A["Pessoa digita uma cidade"] --> B["SearchBar envia a busca"]
+    B --> C{"Consulta normalizada tem pelo menos 2 caracteres?"}
+    C -- "Não" --> D["Hook informa entrada inválida"]
+    D --> UI["Componentes de UI exibem o estado correspondente"]
+    C -- "Sim" --> E["Hook inicia a busca"]
+    E --> F["Serviço de geocodificação"]
+    F --> G{"Busca concluída com sucesso?"}
+    G -- "Não: falha ou timeout" --> H["Hook registra erro de busca"]
+    H --> I["UI exibe erro e opção de tentar novamente"]
+    I -- "Tentar novamente" --> E
+    G -- "Sim" --> J{"Encontrou cidades?"}
+    J -- "Não" --> K["Hook define estado vazio"]
+    K --> L["UI informa que nenhuma cidade foi encontrada"]
+    J -- "Sim" --> M["Hook disponibiliza os resultados"]
+    M --> N["UI exibe a lista de cidades"]
+    N --> O["Pessoa seleciona uma cidade"]
+    O --> P["Hook registra a cidade e limpa os dados meteorológicos anteriores"]
+    P --> Q["Serviço de forecast"]
+    Q --> R{"Previsão válida?"}
+    R -- "Não: falha, timeout ou resposta inválida" --> S["Hook registra erro de forecast"]
+    S --> T["UI exibe erro e opção de tentar novamente"]
+    T -- "Tentar novamente" --> Q
+    R -- "Sim" --> U["Hook atualiza o estado com a previsão"]
+    U --> V["UI exibe condições atuais e previsão diária"]
+    W["Estado inicial: nenhuma cidade selecionada"] --> X["UI exibe orientação inicial"]
+```
 
 1. A pessoa envia a busca por botão ou Enter. A aplicação remove espaços nas extremidades e valida pelo menos dois caracteres; entrada inválida não gera requisição (CA-01.1).
 2. A busca entra em loading e os resultados anteriores deixam de ser apresentados como resultado da consulta atual (CA-01.2). A nova busca não remove a cidade e os dados meteorológicos já selecionados (regra de produto 7).
@@ -161,12 +208,12 @@ As chamadas usam HTTPS e não exigem chave de API.
 
 - **Previsão:** `GET https://api.open-meteo.com/v1/forecast`
   - Usar as coordenadas da `City` selecionada em `latitude` e `longitude`.
-  - Solicitar `current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m`.
+  - Solicitar `current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation,pressure_msl`.
   - Solicitar `daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max`.
   - Definir `temperature_unit=celsius`, `wind_speed_unit=kmh`,
-    `forecast_days=5` e `timezone=auto`.
+    `precipitation_unit=mm`, `forecast_days=5` e `timezone=auto`.
   - Exemplo de URL:
-    `https://api.open-meteo.com/v1/forecast?latitude=-23.5475&longitude=-46.63611&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&temperature_unit=celsius&wind_speed_unit=kmh&forecast_days=5&timezone=auto`
+    `https://api.open-meteo.com/v1/forecast?latitude=-23.5475&longitude=-46.63611&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation,pressure_msl&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&temperature_unit=celsius&wind_speed_unit=kmh&precipitation_unit=mm&forecast_days=5&timezone=auto`
   - Resposta resumida:
 
     ```json
@@ -178,7 +225,9 @@ As chamadas usam HTTPS e não exigem chave de API.
         "apparent_temperature": 23.1,
         "relative_humidity_2m": 65,
         "weather_code": 2,
-        "wind_speed_10m": 12.5
+        "wind_speed_10m": 12.5,
+        "precipitation": 0.2,
+        "pressure_msl": 1013.2
       },
       "daily": {
         "time": [
@@ -201,7 +250,8 @@ As chamadas usam HTTPS e não exigem chave de API.
     `current` mapeado para `CurrentWeather`: `temperature_2m` →
     `temperatureC`, `apparent_temperature` → `apparentTemperatureC`,
     `relative_humidity_2m` → `relativeHumidity`, `weather_code` →
-    `weatherCode`, `wind_speed_10m` → `windSpeedKmh` e `time` →
+    `weatherCode`, `wind_speed_10m` → `windSpeedKmh`,
+    `precipitation` → `precipitationMm`, `pressure_msl` → `pressureHpa` e `time` →
     `referenceTime`.
   - Mapear `daily` para `ForecastDay[]` por índice: `time[i]` →
     `date`, `temperature_2m_min[i]` → `minimumC`,

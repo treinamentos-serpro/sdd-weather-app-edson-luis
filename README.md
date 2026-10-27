@@ -100,6 +100,47 @@ Decisões-chave:
 - **Rede isolada** em `services/` — componentes e hooks não conhecem URLs.
 - Sempre tratar **loading**, **erro** e **vazio**.
 
+### Dados mock para desenvolver a UI
+
+Os contratos estão em [src/types/weather.ts](src/types/weather.ts).
+`Unit` é um alias de `TemperatureUnit`, com os valores `celsius` e `fahrenheit`.
+Para desenvolver componentes sem consultar a API, importe o objeto tipado:
+
+```ts
+import { mockWeatherData } from './mocks/weather';
+```
+
+O exemplo considera um arquivo diretamente em `src/`. O
+[mockWeatherData](src/mocks/weather.ts) contém São Paulo, o fuso
+`America/Sao_Paulo`, condições atuais e cinco dias consecutivos, de 27 a 31 de
+outubro de 2026. São dados fictícios com datas fixas, não condições em tempo real.
+Temperaturas estão em Celsius, vento em km/h e probabilidades em porcentagem.
+O horário de referência e as datas representam o calendário local da cidade.
+
+O [App](src/App.tsx) compõe os componentes em uma tela responsiva, com unidade
+mantida apenas em memória e temperaturas convertidas na renderização.
+Execute `pnpm dev` para abrir a demonstração. A busca simula 600 ms de
+carregamento: qualquer nome válido mostra o mock de São Paulo; `vazio` mostra
+nenhum resultado e `erro` produz uma falha simulada. Os comandos ignoram
+maiúsculas/minúsculas e espaços nas extremidades. “Tentar novamente” repete
+a mesma simulação (portanto `erro` volta a falhar); outra busca válida permite
+voltar ao sucesso. Não há chamadas à API nem alteração da cidade do mock.
+O aviso de demonstração e o link para a Open-Meteo permanecem em todos os estados.
+
+### Componentes de previsão
+
+Use `ForecastList` de [src/components/ForecastList.tsx](src/components/ForecastList.tsx)
+com as props `days` (`ForecastDay[]`) e `unit` (`TemperatureUnit`). Cada
+[ForecastCard](src/components/ForecastCard.tsx) recebe `day` e `unit`, exibindo
+data, condição, máxima, mínima, probabilidade de chuva e vento máximo.
+O grid usa duas colunas no mobile, três a partir de `sm` e cinco a partir de `lg`.
+
+[formatDayLabel](src/lib/format.ts) apresenta o dia da semana e a data em pt-BR,
+sem deslocar o calendário local da cidade para o fuso do dispositivo.
+Temperaturas são convertidas apenas para apresentação; métricas ausentes são
+identificadas como “Indisponível”. Uma lista vazia informa “Previsão indisponível”,
+sem fabricar dias.
+
 ---
 
 ## Stack

@@ -10,6 +10,37 @@ spec. As dependências indicam os pré-requisitos necessários; os identificador
 T-01–T-41 foram preservados para manter a rastreabilidade. Tarefas sem
 pré-requisito estão marcadas como “Nenhuma”.
 
+## Fluxo de dados
+
+```mermaid
+flowchart TD
+    A["Pessoa digita uma cidade"] --> B["SearchBar envia a busca"]
+    B --> C{"Consulta normalizada tem pelo menos 2 caracteres?"}
+    C -- "Não" --> D["Hook informa entrada inválida"]
+    D --> UI["Componentes de UI exibem o estado correspondente"]
+    C -- "Sim" --> E["Hook inicia a busca"]
+    E --> F["Serviço de geocodificação"]
+    F --> G{"Busca concluída com sucesso?"}
+    G -- "Não: falha ou timeout" --> H["Hook registra erro de busca"]
+    H --> I["UI exibe erro e opção de tentar novamente"]
+    I -- "Tentar novamente" --> E
+    G -- "Sim" --> J{"Encontrou cidades?"}
+    J -- "Não" --> K["Hook define estado vazio"]
+    K --> L["UI informa que nenhuma cidade foi encontrada"]
+    J -- "Sim" --> M["Hook disponibiliza os resultados"]
+    M --> N["UI exibe a lista de cidades"]
+    N --> O["Pessoa seleciona uma cidade"]
+    O --> P["Hook registra a cidade e limpa os dados meteorológicos anteriores"]
+    P --> Q["Serviço de forecast"]
+    Q --> R{"Previsão válida?"}
+    R -- "Não: falha, timeout ou resposta inválida" --> S["Hook registra erro de forecast"]
+    S --> T["UI exibe erro e opção de tentar novamente"]
+    T -- "Tentar novamente" --> Q
+    R -- "Sim" --> U["Hook atualiza o estado com a previsão"]
+    U --> V["UI exibe condições atuais e previsão diária"]
+    W["Estado inicial: nenhuma cidade selecionada"] --> X["UI exibe orientação inicial"]
+```
+
 ## Matriz de rastreabilidade
 
 Os identificadores abaixo apontam para requisitos funcionais (RF), critérios
@@ -73,6 +104,8 @@ com o requisito não funcional ou com a evidência de validação correspondente
     clima, incluindo `idle`, `loading`, `success`, `empty` e `error`.
   - Métricas que podem faltar são opcionais; temperaturas armazenadas são
     Celsius.
+  - Condições atuais incluem `precipitationMm?` e `pressureHpa?` para precipitação
+    em mm e pressão ao nível do mar em hPa.
 - **Dependências:** Nenhuma.
 - **Arquivos prováveis:** `src/types/weather.ts`
 - **Tipo:** Data
@@ -105,16 +138,16 @@ com o requisito não funcional ou com a evidência de validação correspondente
 - **Arquivos prováveis:** `src/lib/formatting.ts`
 - **Tipo:** Data
 
-### T-04 — Mapear códigos WMO para rótulos
+### T-04 — Mapear códigos WMO para rótulos e ícones
 
 - **Descrição:** Implementar o mapeamento puro de códigos WMO para descrições
-  em pt-BR.
+  em pt-BR e ícones Unicode.
 - **Critérios de aceite:**
   - Códigos conhecidos retornam rótulos em pt-BR.
   - Código desconhecido retorna indicação de condição indisponível
     (CA-02.8).
 - **Dependências:** T-01.
-- **Arquivos prováveis:** `src/lib/weather-codes.ts`
+- **Arquivos prováveis:** `src/lib/weatherCodes.ts`
 - **Tipo:** Data
 
 
@@ -197,7 +230,7 @@ com o requisito não funcional ou com a evidência de validação correspondente
   - Campo e botão têm rótulos semânticos, operam por teclado e mantêm indicação
     visível de foco (RNF-02).
 - **Dependências:** T-01.
-- **Arquivos prováveis:** `src/components/SearchForm.tsx`
+- **Arquivos prováveis:** `src/components/SearchBar.tsx`
 - **Tipo:** UI
 
 ### T-17 — Exibir e selecionar resultados de cidades
@@ -219,12 +252,15 @@ com o requisito não funcional ou com a evidência de validação correspondente
   ausentes identificadas explicitamente.
 - **Critérios de aceite:**
   - São apresentados os dados disponíveis de temperatura, sensação térmica,
-    umidade, vento e condição; dados ausentes ou códigos desconhecidos são
+    umidade, vento, precipitação atual em mm, pressão ao nível do mar em hPa
+    e condição com ícone de `lib/weatherCodes`; dados ausentes ou códigos desconhecidos são
     indisponíveis, nunca zero ou dado anterior.
+  - Recebe `city`, `current` e `unit`; hero responsivo dark glassmorphism
+    destaca a temperatura e usa `lib/temperature` para temperatura e sensação.
   - Horário de referência, quando houver, é formatado no fuso da cidade e
     identificado como “Referência dos dados” (CA-02.2–CA-02.3, CA-02.8,
     CA-05.4–CA-05.5).
-- **Dependências:** T-03, T-04, T-13.
+- **Dependências:** T-02, T-03, T-04, T-13.
 - **Arquivos prováveis:** `src/components/CurrentWeather.tsx`
 - **Tipo:** UI
 
