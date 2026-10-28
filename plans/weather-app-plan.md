@@ -1,6 +1,6 @@
 # Plano Técnico — Weather App
 
-## Arquitetura
+## Arquitetura (Architecture)
 
 A aplicação será um cliente React em camadas simples: componentes apresentam a interface; um hook coordena busca, seleção, consulta e unidade; serviços isolam as chamadas HTTP e normalizam as respostas da Open-Meteo; funções puras cuidam de conversões e formatação.
 
@@ -18,7 +18,7 @@ useWeather
 
 Os componentes não fazem chamadas de rede nem dependem do formato bruto das APIs. A camada de serviços valida respostas e entrega modelos internos tipados. Essa divisão atende RF-01 a RF-06 sem introduzir estado global ou infraestrutura adicional.
 
-## Tecnologias
+## Tecnologias (Tech Stack)
 
 - **React e TypeScript strict:** componentes e estado tipados, compatíveis com o projeto existente.
 - **Vite:** desenvolvimento e build conforme a configuração existente.
@@ -92,7 +92,7 @@ recalculam os cinco cartões quando `days` e `unit` permanecem iguais; mudanças
 de dados ou unidade continuam renderizando normalmente. Não memoizar cálculos
 triviais nem introduzir comparadores personalizados.
 
-## Modelo de dados
+## Modelo de dados (Data Model)
 
 Os serviços convertem os formatos externos para contratos internos. Os valores de temperatura são armazenados em Celsius e convertidos somente para apresentação.
 
@@ -146,7 +146,7 @@ interface ServiceError {
 
 Uma resposta meteorológica só é utilizável se tiver localização/fuso, temperatura atual utilizável e cinco datas locais distintas e consecutivas. `forecast_days=5` com `timezone=auto` faz a API retornar hoje local e os quatro dias seguintes; quando `current.time` estiver presente, conferir se sua data local coincide com a primeira data prevista. A ausência do horário de referência não invalida a previsão. Campos meteorológicos opcionais ausentes são apresentados como indisponíveis, nunca como zero ou valor anterior; uma data sem métricas permanece identificada. Esses casos são sucesso com dados parciais, não erro. Se faltar um requisito estrutural ou dado essencial, a resposta é inválida e não é apresentada como sucesso. Um código WMO desconhecido também resulta em condição indisponível. Esses contratos atendem CA-02.1 a CA-02.8 e CA-05.4 a CA-05.5.
 
-## Fluxo de dados
+## Fluxo de dados (Data Flow)
 
 ```mermaid
 flowchart TD
@@ -319,7 +319,7 @@ A conversão de temperatura é derivada na renderização, a partir dos valores 
 
 Manter busca e clima separados garante que uma nova busca não apague os dados selecionados. Unidade e consulta não são persistidas (RNF-06).
 
-## Tratamento de erros
+## Tratamento de erros (Error Handling)
 
 - Cada requisição expira em dez segundos. Não há retry automático.
 - O helper `fetchWithTimeout` é reutilizado por geocodificação e previsão, com um `AbortController` por requisição, mantendo o limite durante a leitura do JSON e executando `clearTimeout` no `finally`. `AbortError` gera `WeatherServiceError` de tipo `timeout` com "A consulta demorou mais de 10 segundos. Tente novamente."; falha de rede, inclusive durante a leitura do corpo, gera tipo `network` com "Não foi possível conectar ao serviço. Verifique sua conexão e tente novamente.". JSON malformado gera `invalid-response`.
@@ -334,7 +334,7 @@ Manter busca e clima separados garante que uma nova busca não apague os dados s
 - Ao selecionar outra cidade, nunca apresentar dados meteorológicos anteriores como se fossem atuais. Preservar a cidade selecionada no erro para permitir nova tentativa.
 - Região de loading e mensagens de resultado/erro devem ser anunciadas programaticamente sem exigir mudança de foco. Controles de retry, seleção e unidade devem ser acessíveis por teclado (RNF-02).
 
-## Estratégia de testes
+## Estratégia de testes (Testing Strategy)
 
 Priorizar muitos testes rápidos com Vitest e uma suíte menor de fluxos críticos com Playwright. Cada teste deve indicar o critério de aceite que verifica; usar asserções de comportamento e valores, não snapshots extensos ou detalhes internos dos componentes.
 
