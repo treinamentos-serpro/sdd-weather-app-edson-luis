@@ -1,6 +1,6 @@
 # Especificação de Produto — Weather App
 
-## Status e objetivo
+## Status e objetivo (Overview)
 
 Especificação da primeira versão (v1), derivada de [discovery.md](./discovery.md). As regras abaixo são decisões de escopo para tornar a entrega verificável; mudanças posteriores devem atualizar esta especificação e seus critérios de aceite.
 
@@ -42,7 +42,7 @@ O produto é uma aplicação web responsiva, em português do Brasil, para pesqu
 10. A interface informa o horário de referência fornecido para as condições atuais, no fuso da cidade. Esse horário não deve ser descrito como horário de publicação/atualização da fonte. Se ausente, informar indisponibilidade sem inventar um valor.
 11. A busca e as coordenadas selecionadas são enviadas à Open-Meteo para atender à consulta. A aplicação não solicita localização do dispositivo nem persiste esses dados. A atribuição exigida pela fonte deve ser exibida.
 
-## Requisitos funcionais
+## Requisitos funcionais (Functional Requirements)
 
 - **RF-01 — Buscar cidades:** aceitar uma consulta válida e exibir até dez resultados selecionáveis, com contexto geográfico disponível.
 - **RF-02 — Consultar condições atuais:** após selecionar uma cidade, exibir temperatura e sensação térmica, condição meteorológica com ícone, umidade relativa (%), velocidade do vento (km/h), precipitação atual (mm) e pressão ao nível do mar (hPa) quando fornecidas pela fonte. O hero destaca a temperatura na unidade selecionada.
@@ -51,7 +51,7 @@ O produto é uma aplicação web responsiva, em português do Brasil, para pesqu
 - **RF-05 — Tratar estados e falhas:** distinguir carregamento, resultados vazios, falha de serviço, timeout e dados parciais; oferecer nova tentativa em falhas recuperáveis.
 - **RF-06 — Informar referência temporal:** apresentar o horário de referência das condições atuais quando fornecido, com fuso local, ou indicar que está indisponível.
 
-## Histórias de usuário
+## Histórias de usuário (User Stories)
 
 - **US-01 — Encontrar e selecionar uma cidade:** Como pessoa que consulta o clima, quero buscar uma cidade e selecionar o resultado correto para consultar a localização desejada.
 - **US-02 — Consultar condições atuais:** Como pessoa que consulta o clima, quero ver as condições atuais de uma cidade selecionada para entender o tempo neste momento.
@@ -60,7 +60,7 @@ O produto é uma aplicação web responsiva, em português do Brasil, para pesqu
 - **US-05 — Entender estados e recuperar falhas:** Como pessoa que consulta o clima, quero saber quando uma operação está carregando, não encontrou resultados ou falhou, e poder tentar novamente quando aplicável.
 - **US-06 — Entender a referência dos dados:** Como pessoa que consulta o clima, quero ver o horário de referência das condições atuais no fuso da cidade, ou saber quando ele não está disponível.
 
-## Critérios de aceite
+## Critérios de aceite (Acceptance Criteria)
 
 ### RF-01 — Busca e seleção
 
@@ -99,7 +99,7 @@ O produto é uma aplicação web responsiva, em português do Brasil, para pesqu
 - **CA-05.4:** Dada uma resposta bem-sucedida que contenha horário de referência das condições atuais, quando os dados forem exibidos, então esse horário é apresentado no fuso da cidade sob o rótulo “Referência dos dados”.
 - **CA-05.5:** Dada uma resposta sem horário de referência, quando os dados forem exibidos, então a interface informa que o horário está indisponível e não infere a hora a partir do relógio do dispositivo.
 
-## Requisitos não funcionais
+## Requisitos não funcionais (Non-Functional Requirements)
 
 - **RNF-01 — Responsividade:** em viewports de 320 a 1920 pixels CSS e zoom de 200%, conteúdo e controles permanecem utilizáveis, sem rolagem horizontal da página. Verificar no mínimo 320, 768 e 1920 pixels.
 - **RNF-02 — Acessibilidade:** atender WCAG 2.2 nível AA. Todos os fluxos devem funcionar por teclado, ter foco visível, ordem de foco lógica, rótulos programáticos, contraste AA e anúncios acessíveis de carregamento, resultados e erros. Nenhuma informação pode depender apenas de cor.
@@ -109,6 +109,25 @@ O produto é uma aplicação web responsiva, em português do Brasil, para pesqu
 - **RNF-05 — Desempenho (meta):** em teste com a versão publicada e rede controlada (RTT até 50 ms, sem perda de pacotes), medir do envio da busca/seleção até a renderização dos resultados. Em 100 execuções por fluxo, o percentil 95 deve ser de até 2 s para busca e 3 s para clima. Registrar separadamente latência da fonte; falha ou lentidão externa não pode ser mascarada como sucesso.
 - **RNF-06 — Privacidade:** não solicitar permissão de localização, não usar analytics e não gravar consulta, coordenadas ou unidade em armazenamento persistente. Confirmar no navegador que nenhuma dessas informações é enviada a destinos além da fonte necessária à consulta.
 - **RNF-07 — Fonte externa:** cumprir limites, termos e requisitos de atribuição vigentes da Open-Meteo. Indisponibilidade, resposta inválida e timeout da fonte devem resultar nos estados definidos em RF-05, não em conteúdo fictício.
+
+## Casos extremos (Edge Cases)
+
+- Consultas inválidas, buscas sem resultados e falhas de serviço são estados distintos (CA-01.1, CA-01.4 e CA-01.5).
+- Respostas fora de ordem não substituem a busca ou a localização ativa; dados da cidade anterior não são apresentados para a nova seleção (CA-01.7 e CA-02.7).
+- Campos opcionais ou horário de referência ausentes são informados como indisponíveis; a ausência de dados essenciais invalida a resposta (CA-02.4–CA-02.6 e CA-05.5).
+- As datas da previsão seguem o fuso da cidade, inclusive perto da meia-noite e em mudanças de data (CA-02.2 e CA-02.3).
+
+## Premissas (Assumptions)
+
+- A Open-Meteo fornece a geocodificação e os dados meteorológicos necessários, sem exigir chave de API para o uso previsto na v1.
+- A aplicação depende de conexão com a fonte; funcionamento offline e garantia de disponibilidade externa estão fora do escopo.
+- As consultas são explícitas e a unidade escolhida permanece apenas durante a sessão.
+
+## Riscos (Risks)
+
+- Indisponibilidade, lentidão, mudanças no formato ou nos termos da fonte podem afetar consultas, desempenho e lançamento. Validar respostas, apresentar falhas e revisar os termos vigentes.
+- Diferenças de fuso e respostas fora de ordem podem associar dados à data ou cidade incorreta. Validar os critérios de datas locais e concorrência.
+- Dados opcionais incompletos podem levar a interpretações incorretas se forem apresentados como valores reais; indicar explicitamente a indisponibilidade.
 
 ## Tabela de rastreabilidade
 
